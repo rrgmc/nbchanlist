@@ -11,15 +11,19 @@ var (
 )
 
 // Queue is a non-blocking unbounded lock-free channel-based queue for Golang.
-type Queue[E any] struct {
+type Queue[E any, Q ListType[E]] struct {
 	out  <-chan E
 	in   atomic.Pointer[chan<- E]
 	info <-chan queueChanInfo
 }
 
-func New[E any]() *Queue[E] {
-	out, in, info := newQueueChan[E](&ListQueue[E]{})
-	ret := &Queue[E]{
+func New[E any]() *Queue[E, *ListQueue[E]] {
+	return New2(&ListQueue[E]{})
+}
+
+func New2[E any, Q ListType[E]](list Q) *Queue[E, Q] {
+	out, in, info := newQueueChan[E](list)
+	ret := &Queue[E, Q]{
 		out:  out,
 		info: info,
 	}
@@ -28,12 +32,12 @@ func New[E any]() *Queue[E] {
 }
 
 // Get returns a channel to get items. The caller must check for it to be closed.
-func (q *Queue[E]) Get() <-chan E {
+func (q *Queue[E, Q]) Get() <-chan E {
 	return q.out
 }
 
 // GetCtx returns one item, or an error if the context is done or the queue is closed.
-func (q *Queue[E]) GetCtx(ctx context.Context) (E, error) {
+func (q *Queue[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	select {
 	case <-ctx.Done():
 		var ret E
@@ -48,13 +52,13 @@ func (q *Queue[E]) GetCtx(ctx context.Context) (E, error) {
 }
 
 // Put puts an element in the queue. It never fails or blocks.
-func (q *Queue[E]) Put(e E) {
+func (q *Queue[E, Q]) Put(e E) {
 	_ = q.PutCheck(e)
 }
 
 // PutCheck puts an element in the queue. It never fails or blocks.
 // Returns ErrClosed if the queue is closed.
-func (q *Queue[E]) PutCheck(e E) error {
+func (q *Queue[E, Q]) PutCheck(e E) error {
 	if in := q.in.Load(); in != nil {
 		*in <- e
 		return nil
@@ -62,7 +66,7 @@ func (q *Queue[E]) PutCheck(e E) error {
 	return ErrClosed
 }
 
-func (q *Queue[E]) Size() int {
+func (q *Queue[E, Q]) Size() int {
 	select {
 	case info, ok := <-q.info:
 		if !ok {
@@ -72,11 +76,11 @@ func (q *Queue[E]) Size() int {
 	}
 }
 
-func (q *Queue[E]) Closed() bool {
+func (q *Queue[E, Q]) Closed() bool {
 	return q.in.Load() == nil
 }
 
-func (q *Queue[E]) Close() {
+func (q *Queue[E, Q]) Close() {
 	if old := q.in.Swap(nil); old != nil {
 		close(*old)
 	}
