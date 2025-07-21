@@ -37,7 +37,7 @@ func TestQueueClose(t *testing.T) {
 	assert.Assert(t, q.Closed())
 	expected := []int{12, 13}
 	items, err := readNWithTimeout(q, 3)
-	assert.ErrorIs(t, err, errTestClosed)
+	assert.ErrorIs(t, err, ErrClosed)
 	assert.DeepEqual(t, expected, items)
 }
 
@@ -47,6 +47,17 @@ func TestQueueTimeout(t *testing.T) {
 	q.Put(13)
 	expected := []int{12, 13}
 	items, err := readNWithTimeout(q, 3)
+	assert.ErrorIs(t, err, errTestTimeout)
+	assert.DeepEqual(t, expected, items)
+}
+
+func TestQueueCtxTimeout(t *testing.T) {
+	ctx := context.Background()
+	q := New[int]()
+	q.Put(12)
+	q.Put(13)
+	expected := []int{12, 13}
+	items, err := readNWithContext(ctx, q, 3)
 	assert.ErrorIs(t, err, errTestTimeout)
 	assert.DeepEqual(t, expected, items)
 }
@@ -71,6 +82,9 @@ func readNWithContext[E any](ctx context.Context, q *Queue[E], n int) ([]E, erro
 			defer subCancel()
 			item, err := q.GetCtx(subCtx)
 			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) {
+					return errTestTimeout
+				}
 				return err
 			}
 			ret = append(ret, item)
@@ -89,7 +103,7 @@ func readNWithTimeout[E any](q *Queue[E], n int) ([]E, error) {
 		select {
 		case item, ok := <-q.Get():
 			if !ok {
-				return ret, errTestClosed
+				return ret, ErrClosed
 			}
 			ret = append(ret, item)
 		case <-time.After(300 * time.Millisecond):
@@ -100,6 +114,5 @@ func readNWithTimeout[E any](q *Queue[E], n int) ([]E, error) {
 }
 
 var (
-	errTestClosed  = errors.New("channel closed")
 	errTestTimeout = errors.New("timeout")
 )
