@@ -1,6 +1,7 @@
 package nbchanqueue
 
-// newQueueChan returns a non-blocking queue with element type E. The sending end must be closed by the caller to clean up resources.
+// newQueueChan returns a non-blocking queue with element type E. The sending end must be closed by the
+// caller to clean up resources.
 func newQueueChan[E any]() (<-chan E, chan<- E, <-chan queueChanInfo) {
 	out := make(chan E)
 	in := make(chan E)
