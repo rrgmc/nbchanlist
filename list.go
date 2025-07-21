@@ -10,7 +10,7 @@ var (
 	ErrStopped = errors.New("stopped")
 )
 
-// List is a non-blocking unbounded lock-free channel-based list for Golang.
+// List is a non-blocking unbounded lock-free channel-based list.
 type List[E any, Q ListType[E]] struct {
 	out  <-chan E
 	in   atomic.Pointer[chan<- E]
@@ -64,6 +64,8 @@ func (q *List[E, Q]) PutCheck(e E) error {
 	return ErrStopped
 }
 
+// Size returns the number of items in the list.
+// If the list is closed, returns -1.
 func (q *List[E, Q]) Size() int {
 	select {
 	case info, ok := <-q.info:
@@ -74,6 +76,7 @@ func (q *List[E, Q]) Size() int {
 	}
 }
 
+// Stopped returns whether Stop was called.
 func (q *List[E, Q]) Stopped() bool {
 	return q.in.Load() == nil
 }
