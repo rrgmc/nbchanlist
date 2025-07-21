@@ -6,7 +6,9 @@ nbchanlist is a non-blocking unbounded lock-free channel-based list for Golang.
 For getting items, a channel is provided, so it can be used with `select`, and allows for context cancellation,
 timeouts, and plays nice with other code using channels.
 
-If comes with a "queue" implementation, but other types of lists can be used by implementing the `ListType` interface.
+As it is unbounded, care must be taken to avoid memory exhaustion if adding faster than reading. 
+
+It comes with a "queue" implementation, but other types of lists can be used by implementing the `ListType` interface.
 
 ```go
 import (
