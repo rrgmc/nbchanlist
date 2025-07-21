@@ -14,7 +14,7 @@ import (
 )
 
 func TestQueue(t *testing.T) {
-	q := New[int]()
+	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
 	assert.Equal(t, q.Size(), 2)
@@ -24,7 +24,7 @@ func TestQueue(t *testing.T) {
 
 func TestQueueCtx(t *testing.T) {
 	ctx := context.Background()
-	q := New[int]()
+	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
 	assert.Equal(t, q.Size(), 2)
@@ -33,7 +33,7 @@ func TestQueueCtx(t *testing.T) {
 }
 
 func TestQueueClose(t *testing.T) {
-	q := New[int]()
+	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
 	q.Close()
@@ -46,7 +46,7 @@ func TestQueueClose(t *testing.T) {
 }
 
 func TestQueueTimeout(t *testing.T) {
-	q := New[int]()
+	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
 	expected := []int{12, 13}
@@ -57,7 +57,7 @@ func TestQueueTimeout(t *testing.T) {
 
 func TestQueueCtxTimeout(t *testing.T) {
 	ctx := context.Background()
-	q := New[int]()
+	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
 	expected := []int{12, 13}
@@ -70,7 +70,7 @@ func TestQueueConcurrency(t *testing.T) {
 	var wgGet sync.WaitGroup
 	var wgPut sync.WaitGroup
 
-	q := New[int]()
+	q := NewQueue[int]()
 
 	var getItems []int
 	var putItems []int
@@ -106,19 +106,19 @@ func TestQueueConcurrency(t *testing.T) {
 	assert.DeepEqual(t, putItems, getItems, cmpopts.SortSlices(cmp.Less[int]))
 }
 
-func assertItems[E any, Q ListType[E]](t *testing.T, q *Queue[E, Q], expected []E) {
+func assertItems[E any, Q ListType[E]](t *testing.T, q *List[E, Q], expected []E) {
 	items, err := readNWithTimeout(q, len(expected))
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, items)
 }
 
-func assertItemsCtx[E any, Q ListType[E]](t *testing.T, ctx context.Context, q *Queue[E, Q], expected []E) {
+func assertItemsCtx[E any, Q ListType[E]](t *testing.T, ctx context.Context, q *List[E, Q], expected []E) {
 	items, err := readNWithContext(ctx, q, len(expected))
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, items)
 }
 
-func readNWithContext[E any, Q ListType[E]](ctx context.Context, q *Queue[E, Q], n int) ([]E, error) {
+func readNWithContext[E any, Q ListType[E]](ctx context.Context, q *List[E, Q], n int) ([]E, error) {
 	var ret []E
 	for i := 0; i < n; i++ {
 		xerr := func() error {
@@ -141,7 +141,7 @@ func readNWithContext[E any, Q ListType[E]](ctx context.Context, q *Queue[E, Q],
 	return ret, nil
 }
 
-func readNWithTimeout[E any, Q ListType[E]](q *Queue[E, Q], n int) ([]E, error) {
+func readNWithTimeout[E any, Q ListType[E]](q *List[E, Q], n int) ([]E, error) {
 	var ret []E
 	for i := 0; i < n; i++ {
 		select {

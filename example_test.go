@@ -7,8 +7,8 @@ import (
 	"github.com/rrgmc/nbchanqueue"
 )
 
-func ExampleQueue() {
-	q := nbchanqueue.New[int]()
+func ExampleNewQueue() {
+	q := nbchanqueue.NewQueue[int]()
 	q.Put(12) // never blocks
 	q.Put(13)
 	select {
