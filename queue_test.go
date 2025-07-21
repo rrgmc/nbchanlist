@@ -14,6 +14,7 @@ func TestQueue(t *testing.T) {
 	q.Put(13)
 	assert.Equal(t, q.Size(), 2)
 	assertItems(t, q, []int{12, 13})
+	assert.Equal(t, q.Size(), 0)
 }
 
 func TestQueueClose(t *testing.T) {
@@ -53,7 +54,7 @@ func readNWithTimeout[E any](q *Queue[E], n int) ([]E, error) {
 				return ret, errTestClosed
 			}
 			ret = append(ret, item)
-		case <-time.After(1 * time.Second):
+		case <-time.After(300 * time.Millisecond):
 			return ret, errTestTimeout
 		}
 	}
