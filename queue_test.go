@@ -1,6 +1,7 @@
 package nbchanqueue
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -14,6 +15,16 @@ func TestQueue(t *testing.T) {
 	q.Put(13)
 	assert.Equal(t, q.Size(), 2)
 	assertItems(t, q, []int{12, 13})
+	assert.Equal(t, q.Size(), 0)
+}
+
+func TestQueueCtx(t *testing.T) {
+	ctx := context.Background()
+	q := New[int]()
+	q.Put(12)
+	q.Put(13)
+	assert.Equal(t, q.Size(), 2)
+	assertItemsCtx(t, ctx, q, []int{12, 13})
 	assert.Equal(t, q.Size(), 0)
 }
 
@@ -44,6 +55,32 @@ func assertItems[E any](t *testing.T, q *Queue[E], expected []E) {
 	items, err := readNWithTimeout(q, len(expected))
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, items)
+}
+
+func assertItemsCtx[E any](t *testing.T, ctx context.Context, q *Queue[E], expected []E) {
+	items, err := readNWithContext(ctx, q, len(expected))
+	assert.NilError(t, err)
+	assert.DeepEqual(t, expected, items)
+}
+
+func readNWithContext[E any](ctx context.Context, q *Queue[E], n int) ([]E, error) {
+	var ret []E
+	for i := 0; i < n; i++ {
+		xerr := func() error {
+			subCtx, subCancel := context.WithTimeout(ctx, 300*time.Millisecond)
+			defer subCancel()
+			item, err := q.GetCtx(subCtx)
+			if err != nil {
+				return err
+			}
+			ret = append(ret, item)
+			return nil
+		}()
+		if xerr != nil {
+			return ret, xerr
+		}
+	}
+	return ret, nil
 }
 
 func readNWithTimeout[E any](q *Queue[E], n int) ([]E, error) {
