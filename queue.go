@@ -30,6 +30,7 @@ func (q *Queue[E]) Put(e E) {
 }
 
 // PutCheck puts an element in the queue. It never fails or blocks.
+// Returns false if the queue is closed.
 func (q *Queue[E]) PutCheck(e E) bool {
 	if q.closed.Load() {
 		return false
