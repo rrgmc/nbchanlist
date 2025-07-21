@@ -120,19 +120,19 @@ func TestQueueConcurrency(t *testing.T) {
 	assert.DeepEqual(t, putItems, getItems, cmpopts.SortSlices(cmp.Less[int]))
 }
 
-func assertItems[E any, Q ListType[E]](t *testing.T, q *List[E, Q], expected []E) {
+func assertItems[E any](t *testing.T, q *Queue[E], expected []E) {
 	items, err := readNWithTimeout(q, len(expected))
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, items)
 }
 
-func assertItemsCtx[E any, Q ListType[E]](t *testing.T, ctx context.Context, q *List[E, Q], expected []E) {
+func assertItemsCtx[E any](t *testing.T, ctx context.Context, q *Queue[E], expected []E) {
 	items, err := readNWithContext(ctx, q, len(expected))
 	assert.NilError(t, err)
 	assert.DeepEqual(t, expected, items)
 }
 
-func readNWithContext[E any, Q ListType[E]](ctx context.Context, q *List[E, Q], n int) ([]E, error) {
+func readNWithContext[E any](ctx context.Context, q *Queue[E], n int) ([]E, error) {
 	var ret []E
 	for i := 0; i < n; i++ {
 		xerr := func() error {
@@ -155,7 +155,7 @@ func readNWithContext[E any, Q ListType[E]](ctx context.Context, q *List[E, Q], 
 	return ret, nil
 }
 
-func readNWithTimeout[E any, Q ListType[E]](q *List[E, Q], n int) ([]E, error) {
+func readNWithTimeout[E any](q *Queue[E], n int) ([]E, error) {
 	var ret []E
 	for i := 0; i < n; i++ {
 		select {
