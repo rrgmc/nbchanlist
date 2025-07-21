@@ -23,6 +23,7 @@ func TestQueueClose(t *testing.T) {
 	q.Put(13)
 	q.Close()
 	q.Put(16)
+	assert.Assert(t, q.Closed())
 	expected := []int{12, 13}
 	items, err := readNWithTimeout(q, 3)
 	assert.ErrorIs(t, err, errTestClosed)

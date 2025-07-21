@@ -4,19 +4,19 @@ import "sync/atomic"
 
 // Queue is a non-blocking unbounded lock-free channel-based queue for Golang.
 type Queue[E any] struct {
-	out    <-chan E
-	in     chan<- E
-	info   <-chan queueChanInfo
-	closed atomic.Bool
+	out  <-chan E
+	in   atomic.Pointer[chan<- E]
+	info <-chan queueChanInfo
 }
 
 func New[E any]() *Queue[E] {
 	out, in, info := newQueueChan[E]()
-	return &Queue[E]{
+	ret := &Queue[E]{
 		out:  out,
-		in:   in,
 		info: info,
 	}
+	ret.in.Store(&in)
+	return ret
 }
 
 // Get returns a channel to get items. The caller must check for it to be closed.
@@ -32,24 +32,29 @@ func (q *Queue[E]) Put(e E) {
 // PutCheck puts an element in the queue. It never fails or blocks.
 // Returns false if the queue is closed.
 func (q *Queue[E]) PutCheck(e E) bool {
-	if q.closed.Load() {
-		return false
+	if in := q.in.Load(); in != nil {
+		*in <- e
+		return true
 	}
-	q.in <- e
-	return true
+	return false
 }
 
 func (q *Queue[E]) Size() int {
-	info := <-q.info
-	return info.itemAmount
+	select {
+	case info, ok := <-q.info:
+		if !ok {
+			return -1
+		}
+		return info.itemAmount
+	}
 }
 
 func (q *Queue[E]) Closed() bool {
-	return q.closed.Load()
+	return q.in.Load() == nil
 }
 
 func (q *Queue[E]) Close() {
-	if q.closed.CompareAndSwap(false, true) {
-		close(q.in)
+	if old := q.in.Swap(nil); old != nil {
+		close(*old)
 	}
 }
