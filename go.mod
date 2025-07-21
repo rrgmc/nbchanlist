@@ -1,4 +1,4 @@
-module github.com/rrgmc/nbchanqueue
+module github.com/rrgmc/nbchanlist
 
 go 1.24.5
 

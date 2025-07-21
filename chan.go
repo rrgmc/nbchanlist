@@ -1,4 +1,4 @@
-package nbchanqueue
+package nbchanlist
 
 // newListChan returns a non-blocking list with element type E. The sending end must be closed by the
 // caller to clean up resources.

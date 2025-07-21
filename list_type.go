@@ -1,4 +1,4 @@
-package nbchanqueue
+package nbchanlist
 
 // ListType is an unbounded list implementation. It should never fail if not for memory starvation.
 // It will never be accessed concurrently, so it doesn't need to be goroutine-safe.

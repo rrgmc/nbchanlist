@@ -1,4 +1,4 @@
-package nbchanqueue
+package nbchanlist
 
 // NewQueue returns a List using a queue implementation.
 func NewQueue[E any]() *List[E, *ListQueue[E]] {

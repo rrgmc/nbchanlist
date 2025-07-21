@@ -1,7 +1,7 @@
-# nbchanqueue - Non-blocking unbounded lock-free channel-based queue for Golang
-[![GoDoc](https://godoc.org/github.com/rrgmc/nbchanqueue?status.png)](https://godoc.org/github.com/rrgmc/nbchanqueue)
+# nbchanlist - Non-blocking unbounded lock-free channel-based queue for Golang
+[![GoDoc](https://godoc.org/github.com/rrgmc/nbchanlist?status.png)](https://godoc.org/github.com/rrgmc/nbchanlist)
 
-nbchanqueue is a non-blocking unbounded lock-free channel-based list for Golang.
+nbchanlist is a non-blocking unbounded lock-free channel-based list for Golang.
 
 For getting items, a channel is provided, so it can be used with `select`, and allows for context cancellation,
 timeouts, and plays nice with other code using channels.
@@ -11,11 +11,11 @@ import (
     "fmt"
     "time"
 
-    "github.com/rrgmc/nbchanqueue"
+    "github.com/rrgmc/nbchanlist"
 )
 
 func ExampleQueue() {
-    q := nbchanqueue.NewQueue[int]()
+    q := nbchanlist.NewQueue[int]()
     q.Put(12) // never blocks
     q.Put(13)
     select {
@@ -39,7 +39,7 @@ func ExampleQueue() {
 ## Install
 
 ```shell
-go get github.com/rrgmc/nbchanqueue
+go get github.com/rrgmc/nbchanlist
 ```
 
 # License

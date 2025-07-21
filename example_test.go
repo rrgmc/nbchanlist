@@ -1,14 +1,14 @@
-package nbchanqueue_test
+package nbchanlist_test
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/rrgmc/nbchanqueue"
+	"github.com/rrgmc/nbchanlist"
 )
 
 func ExampleNewQueue() {
-	q := nbchanqueue.NewQueue[int]()
+	q := nbchanlist.NewQueue[int]()
 	q.Put(12) // never blocks
 	q.Put(13)
 	select {
