@@ -1,7 +1,9 @@
 package nbchanlist
 
+type Queue[E any] = List[E, *ListQueue[E]]
+
 // NewQueue returns a List using a queue implementation.
-func NewQueue[E any]() *List[E, *ListQueue[E]] {
+func NewQueue[E any]() *Queue[E] {
 	return New(NewListQueue[E]())
 }
 
