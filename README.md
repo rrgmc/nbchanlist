@@ -25,6 +25,14 @@ func ExampleQueue() {
         fmt.Println("timeout")
     }
     q.Close() // stops goroutine and close channels
+    select {
+    case _, ok := <-q.Get():
+        if !ok {
+            fmt.Println("queue is closed")
+        } else {
+            fmt.Println("should never happen")
+        }
+    }
 }
 ```
 
