@@ -18,7 +18,7 @@ type Queue[E any] struct {
 }
 
 func New[E any]() *Queue[E] {
-	out, in, info := newQueueChan[E]()
+	out, in, info := newQueueChan[E](&ListQueue[E]{})
 	ret := &Queue[E]{
 		out:  out,
 		info: info,
