@@ -1,12 +1,16 @@
 package nbchanqueue
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"gotest.tools/v3/assert"
+	cmp2 "gotest.tools/v3/assert/cmp"
 )
 
 func TestQueue(t *testing.T) {
@@ -60,6 +64,46 @@ func TestQueueCtxTimeout(t *testing.T) {
 	items, err := readNWithContext(ctx, q, 3)
 	assert.ErrorIs(t, err, errTestTimeout)
 	assert.DeepEqual(t, expected, items)
+}
+
+func TestQueueConcurrency(t *testing.T) {
+	var wgGet sync.WaitGroup
+	var wgPut sync.WaitGroup
+
+	q := New[int]()
+
+	var getItems []int
+	var putItems []int
+	var putLock sync.Mutex
+
+	wgGet.Add(1)
+	go func() {
+		defer wgGet.Done()
+		for v := range q.Get() {
+			getItems = append(getItems, v)
+		}
+	}()
+
+	for i := 0; i < 10; i++ {
+		wgPut.Add(1)
+		go func() {
+			defer wgPut.Done()
+			for j := 0; j < 10; j++ {
+				v := i*10 + j
+				q.Put(v)
+				putLock.Lock()
+				putItems = append(putItems, v)
+				putLock.Unlock()
+			}
+		}()
+	}
+	wgPut.Wait()
+	q.Close()
+	wgGet.Wait()
+
+	assert.Assert(t, cmp2.Len(putItems, 10*10))
+	assert.Assert(t, cmp2.Len(getItems, 10*10))
+	assert.DeepEqual(t, putItems, getItems, cmpopts.SortSlices(cmp.Less[int]))
 }
 
 func assertItems[E any](t *testing.T, q *Queue[E], expected []E) {
