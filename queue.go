@@ -26,10 +26,16 @@ func (q *Queue[E]) Get() <-chan E {
 
 // Put puts an element in the queue. It never fails or blocks.
 func (q *Queue[E]) Put(e E) {
+	_ = q.PutCheck(e)
+}
+
+// PutCheck puts an element in the queue. It never fails or blocks.
+func (q *Queue[E]) PutCheck(e E) bool {
 	if q.closed.Load() {
-		return
+		return false
 	}
 	q.in <- e
+	return true
 }
 
 func (q *Queue[E]) Size() int {
