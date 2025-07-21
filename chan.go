@@ -2,11 +2,11 @@ package nbchanlist
 
 // newListChan returns a non-blocking list with element type E. The sending end must be closed by the
 // caller to clean up resources.
-func newListChan[E any, Q ListType[E]](list Q) (<-chan E, chan<- E, <-chan queueChanInfo) {
+func newListChan[E any, Q ListType[E]](list Q) (<-chan E, chan<- E, <-chan listChanInfo) {
 	out := make(chan E)
 	in := make(chan E)
-	info := make(chan queueChanInfo)
-	qinfo := queueChanInfo{}
+	info := make(chan listChanInfo)
+	qinfo := listChanInfo{}
 	go func() {
 		defer close(out)
 		defer close(info)
@@ -42,6 +42,6 @@ func newListChan[E any, Q ListType[E]](list Q) (<-chan E, chan<- E, <-chan queue
 	return out, in, info
 }
 
-type queueChanInfo struct {
+type listChanInfo struct {
 	itemAmount int
 }

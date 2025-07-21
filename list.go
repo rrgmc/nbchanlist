@@ -14,7 +14,7 @@ var (
 type List[E any, Q ListType[E]] struct {
 	out  <-chan E
 	in   atomic.Pointer[chan<- E]
-	info <-chan queueChanInfo
+	info <-chan listChanInfo
 }
 
 func New[E any, Q ListType[E]](list Q) *List[E, Q] {
@@ -32,7 +32,7 @@ func (q *List[E, Q]) Get() <-chan E {
 	return q.out
 }
 
-// GetCtx returns one item, or an error if the context is done or the queue is closed.
+// GetCtx returns one item, or an error if the context is done or the list is closed.
 func (q *List[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	select {
 	case <-ctx.Done():
@@ -47,13 +47,13 @@ func (q *List[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	}
 }
 
-// Put puts an element in the queue. It never fails or blocks.
+// Put puts an element in the list. It never fails or blocks.
 func (q *List[E, Q]) Put(e E) {
 	_ = q.PutCheck(e)
 }
 
-// PutCheck puts an element in the queue. It never fails or blocks.
-// Returns ErrClosed if the queue is closed.
+// PutCheck puts an element in the list. It never fails or blocks.
+// Returns ErrClosed if the list is closed.
 func (q *List[E, Q]) PutCheck(e E) error {
 	if in := q.in.Load(); in != nil {
 		*in <- e

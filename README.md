@@ -1,4 +1,4 @@
-# nbchanlist - Non-blocking unbounded lock-free channel-based queue for Golang
+# nbchanlist - Non-blocking unbounded lock-free channel-based list for Golang
 [![GoDoc](https://godoc.org/github.com/rrgmc/nbchanlist?status.png)](https://godoc.org/github.com/rrgmc/nbchanlist)
 
 nbchanlist is a non-blocking unbounded lock-free channel-based list for Golang.

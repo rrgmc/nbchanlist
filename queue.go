@@ -10,11 +10,11 @@ type ListQueue[T any] struct {
 	q []T
 }
 
+var _ ListType[int] = (*ListQueue[int])(nil)
+
 func NewListQueue[T any]() *ListQueue[T] {
 	return &ListQueue[T]{}
 }
-
-var _ ListType[int] = (*ListQueue[int])(nil)
 
 func (l *ListQueue[T]) Empty() bool {
 	return len(l.q) == 0
