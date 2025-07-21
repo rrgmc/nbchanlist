@@ -32,17 +32,17 @@ func TestQueueCtx(t *testing.T) {
 	assert.Equal(t, q.Size(), 0)
 }
 
-func TestQueueClose(t *testing.T) {
+func TestQueueStop(t *testing.T) {
 	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
-	q.Close()
+	q.Stop()
 	q.Put(16)
-	assert.Assert(t, q.Closed())
+	assert.Assert(t, q.Stopped())
 	expected := []int{12, 13}
-	items, err := readNWithTimeout(q, 3)
-	assert.ErrorIs(t, err, ErrClosed)
-	assert.DeepEqual(t, expected, items)
+	items, err := readNWithTimeout(q, 3) // can still Get after Stop.
+	assert.ErrorIs(t, err, ErrStopped)
+	assert.DeepEqual(t, expected, items) // still gets the expected items.
 }
 
 func TestQueueTimeout(t *testing.T) {
@@ -52,6 +52,19 @@ func TestQueueTimeout(t *testing.T) {
 	expected := []int{12, 13}
 	items, err := readNWithTimeout(q, 3)
 	assert.ErrorIs(t, err, errTestTimeout)
+	assert.DeepEqual(t, expected, items)
+}
+
+func TestQueueClose(t *testing.T) {
+	q := NewQueue[int]()
+	q.Put(12)
+	q.Put(13)
+	q.Close()
+	q.Put(16)
+	assert.Assert(t, q.Stopped())
+	var expected []int                   // Close drains all pending items.
+	items, err := readNWithTimeout(q, 2) // can still get after close
+	assert.ErrorIs(t, err, ErrStopped)
 	assert.DeepEqual(t, expected, items)
 }
 
@@ -98,8 +111,9 @@ func TestQueueConcurrency(t *testing.T) {
 		}()
 	}
 	wgPut.Wait()
-	q.Close()
+	q.Stop()
 	wgGet.Wait()
+	q.Close()
 
 	assert.Assert(t, cmp2.Len(putItems, 10*10))
 	assert.Assert(t, cmp2.Len(getItems, 10*10))
@@ -147,7 +161,7 @@ func readNWithTimeout[E any, Q ListType[E]](q *List[E, Q], n int) ([]E, error) {
 		select {
 		case item, ok := <-q.Get():
 			if !ok {
-				return ret, ErrClosed
+				return ret, ErrStopped
 			}
 			ret = append(ret, item)
 		case <-time.After(300 * time.Millisecond):

@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrClosed = errors.New("list is closed")
+	ErrStopped = errors.New("stopped")
 )
 
 // List is a non-blocking unbounded lock-free channel-based list for Golang.
@@ -28,11 +28,13 @@ func New[E any, Q ListType[E]](list Q) *List[E, Q] {
 }
 
 // Get returns a channel to get items. The caller must check for it to be closed.
+// It can still be called even after Stop.
 func (q *List[E, Q]) Get() <-chan E {
 	return q.out
 }
 
 // GetCtx returns one item, or an error if the context is done or the list is closed.
+// It can still be called even after Stop.
 func (q *List[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	select {
 	case <-ctx.Done():
@@ -41,7 +43,7 @@ func (q *List[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	case v, ok := <-q.Get():
 		if !ok {
 			var ret E
-			return ret, ErrClosed
+			return ret, ErrStopped
 		}
 		return v, nil
 	}
@@ -53,13 +55,13 @@ func (q *List[E, Q]) Put(e E) {
 }
 
 // PutCheck puts an element in the list. It never fails or blocks.
-// Returns ErrClosed if the list is closed.
+// Returns ErrStopped if the list stopped accepting new items.
 func (q *List[E, Q]) PutCheck(e E) error {
 	if in := q.in.Load(); in != nil {
 		*in <- e
 		return nil
 	}
-	return ErrClosed
+	return ErrStopped
 }
 
 func (q *List[E, Q]) Size() int {
@@ -72,12 +74,21 @@ func (q *List[E, Q]) Size() int {
 	}
 }
 
-func (q *List[E, Q]) Closed() bool {
+func (q *List[E, Q]) Stopped() bool {
 	return q.in.Load() == nil
 }
 
+// Stop stops accepting new items. Get still works until the list is drained.
+func (q *List[E, Q]) Stop() {
+	if in := q.in.Swap(nil); in != nil {
+		close(*in)
+	}
+}
+
+// Close stops accepting new items and drains any existing ones, freeing all used resources.
 func (q *List[E, Q]) Close() {
-	if old := q.in.Swap(nil); old != nil {
-		close(*old)
+	q.Stop()
+	// drain items to stop goroutine.
+	for range q.out {
 	}
 }

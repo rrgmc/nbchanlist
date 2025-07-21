@@ -26,4 +26,8 @@ func ExampleNewQueue() {
 			fmt.Println("should never happen")
 		}
 	}
+
+	// Output:
+	// 12
+	// queue is closed
 }

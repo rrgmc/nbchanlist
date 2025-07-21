@@ -18,7 +18,7 @@ import (
     "github.com/rrgmc/nbchanlist"
 )
 
-func ExampleQueue() {
+func ExampleNewQueue() {
     q := nbchanlist.NewQueue[int]()
     q.Put(12) // never blocks
     q.Put(13)
@@ -37,6 +37,10 @@ func ExampleQueue() {
             fmt.Println("should never happen")
         }
     }
+
+    // Output:
+    // 12
+    // queue is closed
 }
 ```
 
