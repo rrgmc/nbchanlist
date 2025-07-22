@@ -30,6 +30,10 @@ func TestQueueCtx(t *testing.T) {
 	assert.Equal(t, q.Size(), 2)
 	assertItemsCtx(t, ctx, q, []int{12, 13})
 	assert.Equal(t, q.Size(), 0)
+
+	q.Close()
+	_, err := q.GetCtx(ctx)
+	assert.ErrorIs(t, err, ErrStopped)
 }
 
 func TestQueueStop(t *testing.T) {
@@ -62,6 +66,7 @@ func TestQueueClose(t *testing.T) {
 	q.Close()
 	q.Put(16)
 	assert.Assert(t, q.Stopped())
+	assert.Equal(t, -1, q.Size())
 	var expected []int                   // Close drains all pending items.
 	items, err := readNWithTimeout(q, 2) // can still get after close
 	assert.ErrorIs(t, err, ErrStopped)

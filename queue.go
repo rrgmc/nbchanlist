@@ -18,10 +18,6 @@ func NewListQueue[T any]() *ListQueue[T] {
 	return &ListQueue[T]{}
 }
 
-func (l *ListQueue[T]) Empty() bool {
-	return len(l.q) == 0
-}
-
 func (l *ListQueue[T]) Put(t T) {
 	l.q = append(l.q, t)
 }
