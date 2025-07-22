@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrStopped = errors.New("stopped")
+	ErrClosed = errors.New("closed")
 )
 
 // List is a non-blocking unbounded lock-free channel-based list.
@@ -28,13 +28,13 @@ func New[E any, Q ListType[E]](list Q) *List[E, Q] {
 }
 
 // Get returns a channel to get items. The caller must check for it to be closed.
-// It can still be called even after Stop.
+// It can still be called even after Close.
 func (q *List[E, Q]) Get() <-chan E {
 	return q.out
 }
 
 // GetCtx returns one item, or an error if the context is done or the list is closed.
-// It can still be called even after Stop.
+// It can still be called even after Close.
 func (q *List[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	select {
 	case <-ctx.Done():
@@ -43,7 +43,7 @@ func (q *List[E, Q]) GetCtx(ctx context.Context) (E, error) {
 	case v, ok := <-q.Get():
 		if !ok {
 			var ret E
-			return ret, ErrStopped
+			return ret, ErrClosed
 		}
 		return v, nil
 	}
@@ -55,17 +55,17 @@ func (q *List[E, Q]) Put(e E) {
 }
 
 // PutCheck puts an element in the list. It never fails or blocks.
-// Returns ErrStopped if the list stopped accepting new items.
+// Returns ErrClosed if the list stopped accepting new items.
 func (q *List[E, Q]) PutCheck(e E) error {
 	if in := q.in.Load(); in != nil {
 		*in <- e
 		return nil
 	}
-	return ErrStopped
+	return ErrClosed
 }
 
 // Size returns the number of items in the list.
-// If the list is closed, returns -1.
+// If the list is shutdown, returns -1.
 func (q *List[E, Q]) Size() int {
 	select {
 	case info, ok := <-q.info:
@@ -76,21 +76,21 @@ func (q *List[E, Q]) Size() int {
 	}
 }
 
-// Stopped returns whether Stop was called.
-func (q *List[E, Q]) Stopped() bool {
+// Closed returns whether Close was called.
+func (q *List[E, Q]) Closed() bool {
 	return q.in.Load() == nil
 }
 
-// Stop stops accepting new items. Get still works until the list is drained.
-func (q *List[E, Q]) Stop() {
+// Close stops accepting new items. Get still works until the list is drained.
+func (q *List[E, Q]) Close() {
 	if in := q.in.Swap(nil); in != nil {
 		close(*in)
 	}
 }
 
-// Close stops accepting new items and drains any existing ones, freeing all used resources.
-func (q *List[E, Q]) Close() {
-	q.Stop()
+// Shutdown stops accepting new items and drains any existing ones, freeing all used resources.
+func (q *List[E, Q]) Shutdown() {
+	q.Close()
 	// drain items to stop goroutine.
 	for range q.out {
 	}

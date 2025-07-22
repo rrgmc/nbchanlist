@@ -31,26 +31,28 @@ func TestQueueCtx(t *testing.T) {
 	assertItemsCtx(t, ctx, q, []int{12, 13})
 	assert.Equal(t, q.Size(), 0)
 
-	q.Close()
+	q.Shutdown()
 	_, err := q.GetCtx(ctx)
-	assert.ErrorIs(t, err, ErrStopped)
+	assert.ErrorIs(t, err, ErrClosed)
 }
 
-func TestQueueStop(t *testing.T) {
+func TestQueueClose(t *testing.T) {
 	q := NewQueue[int]()
+	defer q.Shutdown()
 	q.Put(12)
 	q.Put(13)
-	q.Stop()
+	q.Close()
 	q.Put(16)
-	assert.Assert(t, q.Stopped())
+	assert.Assert(t, q.Closed())
 	expected := []int{12, 13}
-	items, err := readNWithTimeout(q, 3) // can still Get after Stop.
-	assert.ErrorIs(t, err, ErrStopped)
+	items, err := readNWithTimeout(q, 3) // can still Get after Close.
+	assert.ErrorIs(t, err, ErrClosed)
 	assert.DeepEqual(t, expected, items) // still gets the expected items.
 }
 
 func TestQueueTimeout(t *testing.T) {
 	q := NewQueue[int]()
+	defer q.Shutdown()
 	q.Put(12)
 	q.Put(13)
 	expected := []int{12, 13}
@@ -59,23 +61,24 @@ func TestQueueTimeout(t *testing.T) {
 	assert.DeepEqual(t, expected, items)
 }
 
-func TestQueueClose(t *testing.T) {
+func TestQueueShutdown(t *testing.T) {
 	q := NewQueue[int]()
 	q.Put(12)
 	q.Put(13)
-	q.Close()
+	q.Shutdown()
 	q.Put(16)
-	assert.Assert(t, q.Stopped())
+	assert.Assert(t, q.Closed())
 	assert.Equal(t, -1, q.Size())
-	var expected []int                   // Close drains all pending items.
+	var expected []int                   // Shutdown drains all pending items.
 	items, err := readNWithTimeout(q, 2) // can still get after close
-	assert.ErrorIs(t, err, ErrStopped)
+	assert.ErrorIs(t, err, ErrClosed)
 	assert.DeepEqual(t, expected, items)
 }
 
 func TestQueueCtxTimeout(t *testing.T) {
 	ctx := context.Background()
 	q := NewQueue[int]()
+	defer q.Shutdown()
 	q.Put(12)
 	q.Put(13)
 	expected := []int{12, 13}
@@ -116,9 +119,9 @@ func TestQueueConcurrency(t *testing.T) {
 		}()
 	}
 	wgPut.Wait()
-	q.Stop()
-	wgGet.Wait()
 	q.Close()
+	wgGet.Wait()
+	q.Shutdown()
 
 	assert.Assert(t, cmp2.Len(putItems, 10*10))
 	assert.Assert(t, cmp2.Len(getItems, 10*10))
@@ -166,7 +169,7 @@ func readNWithTimeout[E any](q *Queue[E], n int) ([]E, error) {
 		select {
 		case item, ok := <-q.Get():
 			if !ok {
-				return ret, ErrStopped
+				return ret, ErrClosed
 			}
 			ret = append(ret, item)
 		case <-time.After(300 * time.Millisecond):

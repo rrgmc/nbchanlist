@@ -17,7 +17,7 @@ func ExampleNewQueue() {
 	case <-time.After(time.Second):
 		fmt.Println("timeout")
 	}
-	q.Close() // stops goroutine and close channels
+	q.Shutdown() // stops goroutine and close channels
 	select {
 	case _, ok := <-q.Get():
 		if !ok {

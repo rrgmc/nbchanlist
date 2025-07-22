@@ -10,6 +10,14 @@ As it is unbounded, care must be taken to avoid memory exhaustion if adding fast
 
 It comes with a "queue" implementation, but other types of lists can be used by implementing the `ListType` interface.
 
+## Install
+
+```shell
+go get github.com/rrgmc/nbchanlist
+```
+
+## Example
+
 ```go
 import (
     "fmt"
@@ -28,7 +36,7 @@ func ExampleNewQueue() {
     case <-time.After(time.Second):
         fmt.Println("timeout")
     }
-    q.Close() // stops goroutine and close channels
+    q.Shutdown() // stops goroutine and close channels
     select {
     case _, ok := <-q.Get():
         if !ok {
@@ -42,12 +50,6 @@ func ExampleNewQueue() {
     // 12
     // queue is closed
 }
-```
-
-## Install
-
-```shell
-go get github.com/rrgmc/nbchanlist
 ```
 
 # License
