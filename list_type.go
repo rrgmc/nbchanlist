@@ -5,5 +5,5 @@ package nbchanlist
 type ListType[T any] interface {
 	Put(T)           // add item to list
 	Peek() (T, bool) // peek the next item that will be returned by the next Pop call if there is one.
-	Pop()            // remove the item that was/would be returned by the previous Peek call.
+	Pop()            // remove the item that was/would be returned by the previous Peek call. If not available, do nothing.
 }
